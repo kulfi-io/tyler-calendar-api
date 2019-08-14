@@ -1,5 +1,6 @@
 import * as bodyParser from 'body-parser';
 import * as config from './config/config.json';
+import routes from './routes'
 import * as cors from 'cors';
 import * as express from 'express';
 import * as helmet from 'helmet';
@@ -9,11 +10,11 @@ export class App {
   private server: express.Application;
 
   constructor() {
-    process.title = config.appName;
+    process.title = config.name;
     this.server = express();
     this.configureMiddleware();
     this.routes();
-    this.run(config.port, config.host);
+    this.run();
   }
 
   private configureMiddleware() {
@@ -29,15 +30,14 @@ export class App {
   private routes() {
 
     const router = express.Router();
-
-  
+    routes.map(router);
     this.server.use(router);
 
   }
 
-  public run(port: number, host: string) {
-    this.server.listen(port, host, () => {
-      console.log(`listening on: ${host}:${port}`);
+  public run() {
+    this.server.listen(config.port, config.host, () => {
+      console.log(`${config.name} listening on: ${config.host}:${config.port}`);
       console.log(`ENV: ${process.env.NODE_ENV}`);
     });
   }
