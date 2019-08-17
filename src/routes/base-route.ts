@@ -2,7 +2,7 @@ import {Request, Response} from 'express';
 import * as config from '../config/config.json'
 
 export class BaseRoute {
-    protected title: string;
+    public title: string;
 
     constructor() {
         this.title = `Welcome to ${config.name}`;
@@ -10,7 +10,7 @@ export class BaseRoute {
 
     public responseData(req: Request, res: Response, data?: Object) {
         res.locals.BASE_URL = "/";
-        res.locals.title = this.title;
+        // res.locals.title = this.title;
         res.status(200);
         res.send(data);
     }

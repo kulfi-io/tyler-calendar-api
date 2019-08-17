@@ -1,33 +1,25 @@
-import { BaseController } from "./base-controller";
-import {Request, Response} from 'express'
+import BaseController from "./base-controller";
+import { Request, Response } from 'express';
 
 export class CalendarController extends BaseController {
     constructor() {
         super();
     }
 
-    addEvent = (req: Request, res: Response) => {
+    calendarlist = (req: Request, res: Response) => {
+        this.googleCalendar.Calendar.calendarList.list()
+            .then((result) => {
+                return res.status(200).send({ message: 'list', data: result.data });
+            })
+            .catch((err) => {
+                res.status(400).send({ message: err.message });
+            });
+    }
+
+    getCalendar = (req: Request, res: Response) => {
 
     }
 
-    deleteEvent = (req: Request, res: Response) => {
-
-    }
-
-    getEvents = (req: Request, res: Response) => {
-
-    }
-
-    getEvent = (req: Request, res: Response) => {
-
-    }
-
-    updateEvent = (req: Request, res: Response) => {
-
-    }
 }
 
 export default new CalendarController();
-
-
-

@@ -1,21 +1,20 @@
-import * as config from '../config/config.json';
-import * as crypto from 'crypto';
-import { ENV } from '../models/enums';
+import { cryptor } from '../library/cryptor';
+import { GoogleCalendar } from './google-calendar-controller';
 import { Types } from 'mongoose';
 
-export class BaseController {
-    protected isProd: boolean;
-    private algorithm: string;
+
+export default class BaseController extends cryptor {
+    protected googleCalendar: typeof GoogleCalendar;
 
     constructor() {
-        this.isProd = process.env.NODE_ENV === ENV.PROD;
-        this.algorithm = 'aes192';
+        super();
+        this.googleCalendar = GoogleCalendar;
     }
 
     private convertToTarget<T>(target: Object): T {
         return <T>target;
     }
-
+   
     protected convertToSchemaType<P, O>(target: Object): O {
         const _primary = this.convertToTarget<P>(target);
         const _output = this.convertToTarget<O>(_primary);
@@ -24,23 +23,11 @@ export class BaseController {
     }
 
     protected encrypt = (data: Object): string => {
-        let encrypted = '';
-        const cipher = crypto.createCipher(this.algorithm, config.secret);
-
-        encrypted = cipher.update(data.toString(), 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-
-        return this.isProd ? encrypted : data.toString();
+        return this.encrypt(data);
     }
 
-    protected decrypt(data: Object): string  {
-
-        let decrypted = '';
-        const decipher = crypto.createDecipher(this.algorithm, config.secret);
-        decrypted = decipher.update(data.toString(), 'hex', 'utf8');
-        decrypted += decipher.final().toString();
-
-        return  this.isProd ? decrypted : data.toString();
+    protected decrypt(data: Object): string {
+        return this.decrypt(data);
     }
 
     protected mongoIdObjectToString(data: Types.ObjectId): string {
@@ -54,4 +41,3 @@ export class BaseController {
     }
 }
 
-export default new BaseController();

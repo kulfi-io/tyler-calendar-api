@@ -43,6 +43,7 @@ node_modules/
 jspm_packages/
 src/config
 ts-dist/
+src/process.env
 
 # TypeScript v1 declaration files
 typings/
