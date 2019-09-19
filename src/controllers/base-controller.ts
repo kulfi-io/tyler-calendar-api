@@ -22,13 +22,6 @@ export default class BaseController extends cryptor {
         return _output;
     }
 
-    protected encrypt = (data: Object): string => {
-        return this.encrypt(data);
-    }
-
-    protected decrypt(data: Object): string {
-        return this.decrypt(data);
-    }
 
     protected mongoIdObjectToString(data: Types.ObjectId): string {
         var _id = <Object>data;

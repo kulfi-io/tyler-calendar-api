@@ -13,6 +13,7 @@ export class MailerRouter extends BaseRoute {
         router.get('/v1/cal-list', calendar.calendarlist);
         router.get('/v1/events', event.events);
         router.post('/v1/event', event.add);
+        router.delete('/v1/event/:id', event.delete);
     }
 }
 

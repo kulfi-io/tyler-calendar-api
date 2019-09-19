@@ -23,6 +23,7 @@ export interface ICalTime {
 
 export interface IAttendee {
     email: string;
+    responseStatus?: string;
 }
 
 export interface IOverride {
@@ -30,7 +31,7 @@ export interface IOverride {
     minutes: number;
 }
 
-export interface ICalEvent {
+export interface IGoogleCalEvent {
     summary: string;
     location: string;
     description: string;
@@ -44,12 +45,32 @@ export interface ICalEvent {
     }
 }
 
-export interface IEvent {
+// export interface IEvent  {
+//     summary: string;
+//     location: string;
+//     start: string | Date;
+//     end: string | Date;
+//     id: string;
+// }
+
+
+
+export interface ICalEvent  {
     summary: string;
     location: string;
     description: string;
     start: string;
     end: string;
-    email: string;
+    attendees: IAttendee[]
 }
+export interface ICalEventResponse  {
+    id?: string;
+    summary?: string;
+    location?: string;
+    description?: string;
+    start?: ICalTime;
+    end?: ICalTime;
+    attendees?: IAttendee[]
+}
+
 

@@ -12,27 +12,26 @@ export class cryptor {
         this.isProd = process.env.NODE_ENV === ENV.PROD;
     }
 
-    protected encrypt = (data: Object): string => {
+    public encrypt = (data: Object): string => {
 
         let encrypted = '';
         const cipher = crypto.createCipher(this.algorithm, secret);
         encrypted = cipher.update(data.toString(), 'utf8', 'hex');
         encrypted += cipher.final('hex');
 
-        return encrypted;
-        //return this.isProd ? encrypted : data.toString();
+        return this.isProd ? encrypted : data.toString();
     }
 
-    protected decrypt(data: Object): string  {
+    public decrypt(data: Object): string  {
 
         let decrypted = '';
         const decipher = crypto.createDecipher(this.algorithm, secret);
         decrypted = decipher.update(data.toString(), 'hex', 'utf8');
         decrypted += decipher.final().toString();
         
-        return decrypted;
+        // return decrypted;
 
-        // return this.isProd ? decrypted : data.toString();
+        return this.isProd ? decrypted : data.toString();
     }
 
     protected encryptUserCookie(data: Object): string {
