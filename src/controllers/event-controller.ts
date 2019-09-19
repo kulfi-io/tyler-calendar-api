@@ -161,7 +161,6 @@ export class EventController extends BaseController {
                 return res.status(400).send({ message: err.message });
             });
 
-
     }
 }
 
