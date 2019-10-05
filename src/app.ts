@@ -31,9 +31,6 @@ export class App {
 
   private routes() {
     const router = express.Router();
-    router.get('/', (req, res) => {
-      res.status(200).send('welcome');
-    });
     routes.map(router);
     this.server.use(router);
   }
