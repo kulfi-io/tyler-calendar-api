@@ -8,6 +8,11 @@ export interface IGoogCredentials {
     authProviderx509CertUrl: string;
 }
 
+export interface ICryptoData {
+    iv: string,
+    encryptedData: string
+}
+
 export interface IGoogleCalToken {
     access_token: string;
     refresh_token: string;
@@ -17,13 +22,18 @@ export interface IGoogleCalToken {
 }
 
 export interface ICalTime {
-    dateTime: string;
-    timeZone: string;
+    dateTime: string | ICryptoData;
+    timeZone: string | ICryptoData;
 }
 
 export interface IAttendee {
-    email: string;
-    responseStatus?: string;
+    email: string | ICryptoData;
+    responseStatus?: string | ICryptoData;
+}
+
+export interface IRequestAttendee {
+    email: string ;
+    responseStatus?: string ;
 }
 
 export interface IOverride {
@@ -61,16 +71,21 @@ export interface ICalEvent  {
     description: string;
     start: string;
     end: string;
-    attendees: IAttendee[]
+    attendees: IRequestAttendee[]
 }
 export interface ICalEventResponse  {
-    id?: string;
-    summary?: string;
-    location?: string;
-    description?: string;
+    id?: string | ICryptoData;
+    summary?: string | ICryptoData;
+    location?: string | ICryptoData;
+    description?: string | ICryptoData;
     start?: ICalTime;
     end?: ICalTime;
     attendees?: IAttendee[]
+}
+
+export interface ICalEvents {
+    all: ICalEventResponse[],
+    targets: ICalEventResponse[]
 }
 
 

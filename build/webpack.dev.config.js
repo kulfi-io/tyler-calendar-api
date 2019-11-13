@@ -9,6 +9,6 @@ module.exports = merge(baseConf, {
     devtool: 'inline-source-map',
     output: {
         filename: 'app.js',
-        path: path.resolve(__dirname, 'dist')
+        path: path.resolve(__dirname, '../app')
     },
 });

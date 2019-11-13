@@ -44,6 +44,7 @@ jspm_packages/
 src/config
 ts-dist/
 src/process.env
+app
 
 # TypeScript v1 declaration files
 typings/
