@@ -8,7 +8,7 @@ import { GaxiosResponse } from 'gaxios';
 
 export class EventController extends BaseController {
     private minTime: moment.Moment;
-    private maxTime: moment.Moment 
+    private maxTime: moment.Moment
 
     constructor() {
         super();
@@ -18,14 +18,30 @@ export class EventController extends BaseController {
 
     }
 
-    private setDate = (date?: Date) => {
-        if (date) {
-            this.minTime = moment(date).startOf('month');
-            this.maxTime = moment(date).endOf('month');
-        } else {
+    private setDate = (date?: Date, scheduled?: boolean) => {
+
+        if (!date && scheduled) {
+            const _date = new Date().setMonth(-6);
             const _now = new Date(Date.now());
-            this.minTime = moment(_now).startOf('month');
+
+            this.minTime = moment(_date).startOf('month');
             this.maxTime = moment(_now).endOf('month');
+        } else {
+            if (date) {
+                this.minTime = moment(date).startOf('month');
+                this.maxTime = moment(date).endOf('month');
+            } else {
+                const _now = new Date(Date.now());
+                this.minTime = moment(_now).startOf('month');
+                this.maxTime = moment(_now).endOf('month');
+            }
+        }
+    }
+
+    private setDateRange = (start: Date, end: Date) => {
+        if (start && end) {
+            this.minTime = moment(start);
+            this.maxTime = moment(end);
         }
     }
 
@@ -43,13 +59,15 @@ export class EventController extends BaseController {
         return _item;
     }
 
-    private filterByAttendees = (item: ICalEventResponse, email: string): ICalEventResponse | undefined => {
+    private filterByAttendees = (item: calendar_v3.Schema$Event, email: string): calendar_v3.Schema$Event | undefined => {
 
 
         if (item.attendees) {
             const _filtered = item.attendees.find(x => x.email === email);
-            if (_filtered)
+            if (_filtered) {
                 return item;
+            }
+
         }
 
         return undefined;
@@ -90,49 +108,46 @@ export class EventController extends BaseController {
             item.attendees = _attendes;
         }
 
+
         return item;
     }
 
-    private retrieveEventList = (): Promise<GaxiosResponse<calendar_v3.Schema$Events>> => {
+    private retrieveEventList = (maxResult: number = 300): Promise<GaxiosResponse<calendar_v3.Schema$Events>> => {
 
         return this.googleCalendar.Calendar.events.list({
             calendarId: 'primary',
             timeMin: this.minTime.toISOString(),
             timeMax: this.maxTime.toISOString(),
-            maxResults: 300,
+            maxResults: maxResult,
             singleEvents: true,
-            orderBy: 'startTime',
+            orderBy: `startTime`,
+
         });
 
     }
 
-    // eventByTargetDate = (req: Request, res: Response) => {
-    //     if (!req.params.date) {
-    //         return res.status(400).send({ message: 'Missing target date' });
-    //     }
+    private sortDescending = (events: calendar_v3.Schema$Event[]): calendar_v3.Schema$Event[] => {
 
-    //     const _date = this.decrypt(req.params.date);
+        events.sort((a, b) => {
+            if (a.start && a.start.dateTime && b.start && b.start.dateTime) {
 
-    //     this.setDate(new Date(_date));
+                const _startA = new Date(a.start.dateTime.toString());
+                const _startB = new Date(b.start.dateTime.toString());
 
-    //     this.retrieveEventList()
-    //         .then((result) => {
-    //             const _events: ICalEventResponse[] = [];
-    //             const _items = result.data.items;
+                const _a = Date.parse(_startA.toISOString());
+                const _b = Date.parse(_startB.toISOString());
 
-    //             if (_items) {
-    //                 _items.forEach((item: calendar_v3.Schema$Event) => {
-    //                     const _item = this.mapCalendarResponse(item);
-    //                     _events.push(this.encryptResponse(_item));
-    //                 });
-    //             }
+                return _b - _a;
+            } else {
+                return 0;
+            }
 
-    //             res.status(200).send({ message: 'OK', events: _events })
-    //         })
-    //         .catch((err: Error) => {
-    //             res.status(400).send({ message: err.message });
-    //         });
-    // }
+
+        });
+
+        return events.slice(0, 10);
+    }
+
 
     eventByTargetUser = (req: Request, res: Response) => {
 
@@ -145,19 +160,62 @@ export class EventController extends BaseController {
 
         this.retrieveEventList()
             .then((result) => {
-                const _events: ICalEvents = { all: [], targets: []}
+                const _events: ICalEvents = { all: [], targets: [] }
                 const _items = result.data.items;
 
                 if (_items) {
+
                     _items.forEach((item: calendar_v3.Schema$Event) => {
                         const _item = this.mapCalendarResponse(item);
-                        const _filtered = this.filterByAttendees(_item, _user);
                         const _encryptedItem = this.encryptResponse(_item);
                         _events.all.push(_encryptedItem);
 
+                        const _filtered = this.filterByAttendees(item, _user);
                         if (_filtered)
                             _events.targets.push(_encryptedItem);
                     });
+
+
+                }
+
+
+                res.status(200).send({ message: 'OK', events: _events })
+            })
+            .catch((err: Error) => {
+                res.status(400).send({ message: err.message });
+            });
+    }
+
+
+    scheduledEvents = (req: Request, res: Response) => {
+
+        if (!req.params.user) {
+            return res.status(400).send({ message: 'Missing target user' });
+        }
+
+        const _user = this.decrypt(req.params.user);
+        this.setDate(undefined, true);
+
+
+        this.retrieveEventList()
+            .then((result) => {
+                const _events: ICalEvents = { all: [], targets: [] }
+                let _items = result.data.items;
+
+                if (_items) {
+
+                    const _filtered = _items.filter((item) => {
+                        return this.filterByAttendees(item, _user);
+                    });
+
+                    const _sorted = this.sortDescending(_filtered);
+
+                    _sorted.forEach((item) => {
+                        const _mapped = this.mapCalendarResponse(item);
+                        const _encrypted = this.encryptResponse(_mapped);
+                        _events.targets.push(_encrypted);
+                    });
+
                 }
 
                 res.status(200).send({ message: 'OK', events: _events })
@@ -172,7 +230,7 @@ export class EventController extends BaseController {
         if (!req.params.user || !req.params.date) {
             return res.status(400).send({ message: 'Missing target(s)' });
         }
-        
+
         const _date = this.decrypt(req.params.date);
         const _user = this.decrypt(req.params.user);
 
@@ -180,19 +238,58 @@ export class EventController extends BaseController {
 
         this.retrieveEventList()
             .then((result) => {
-                const _events: ICalEvents = {all: [], targets: []};
+                const _events: ICalEvents = { all: [], targets: [] };
                 const _items = result.data.items;
 
                 if (_items) {
-                    _items.forEach((item: calendar_v3.Schema$Event) => {
-                        const _item = this.mapCalendarResponse(item);
-                        const _filtered = this.filterByAttendees(_item, _user);
-                        const _encryptedItem = this.encryptResponse(_item);
-                        _events.all.push(_encryptedItem);
-                        if (_filtered) {
-                            _events.targets.push(_encryptedItem);
-                        }
+
+                    _items.forEach((item) => {
+                        const _mapped = this.mapCalendarResponse(item);
+                        const _encrypted = this.encryptResponse(_mapped);
+                        _events.all.push(_encrypted);
+
+                        const _filtered = this.filterByAttendees(item, _user);
+                        if (_filtered)
+                            _events.targets.push(_encrypted);
                     });
+
+                }
+
+
+                res.status(200).send({ message: 'OK', events: _events })
+
+
+
+            })
+            .catch((err: Error) => {
+                res.status(400).send({ message: err.message });
+            });
+    }
+
+    eventSearch = (req: Request, res: Response) => {
+        if (!req.params.start || !req.params.end) {
+            return res.status(400).send({ message: 'Missing target(s)' });
+        }
+
+        const _start = new Date(this.decrypt(req.params.start));
+        const _end = new Date(this.decrypt(req.params.end));
+
+        this.setDateRange(_start, _end);
+
+        this.retrieveEventList()
+            .then((result) => {
+                const _events: ICalEvents = { all: [], targets: [] };
+                const _items = result.data.items;
+
+
+                if (_items) {
+
+                    _items.forEach((item) => {
+                        const _mapped = this.mapCalendarResponse(item);
+                        const _encrypted = this.encryptResponse(_mapped);
+                        _events.all.push(_encrypted);
+                    });
+
                 }
 
                 res.status(200).send({ message: 'OK', events: _events })
@@ -200,6 +297,8 @@ export class EventController extends BaseController {
             .catch((err: Error) => {
                 res.status(400).send({ message: err.message });
             });
+
+
     }
 
     events = (req: Request, res: Response) => {
@@ -214,18 +313,27 @@ export class EventController extends BaseController {
 
         this.retrieveEventList()
             .then((result) => {
-                // const _events: ICalEventResponse[] = [];
-                let _events:ICalEvents = { all: [], targets: []};
+                let _events: ICalEvents = { all: [], targets: [] };
                 const _items = result.data.items;
 
                 if (_items) {
-                    _items.forEach((item: calendar_v3.Schema$Event) => {
-                        const _item = this.mapCalendarResponse(item);
-                        const _encryptedItem = this.encryptResponse(_item);
-                        _events.all.push(_encryptedItem);
-                        //_events.push(this.encryptResponse(_item));
+
+                    _items.forEach((item) => {
+                        const _mapped = this.mapCalendarResponse(item);
+                        const _encrypted = this.encryptResponse(_mapped);
+                        _events.all.push(_encrypted);
                     });
+
                     _events.targets = _events.all;
+
+
+                    // _items.forEach((item: calendar_v3.Schema$Event) => {
+                    //     const _item = this.mapCalendarResponse(item);
+                    //     const _encryptedItem = this.encryptResponse(_item);
+                    //     _events.all.push(_encryptedItem);
+                    //     //_events.push(this.encryptResponse(_item));
+                    // });
+                    // _events.targets = _events.all;
                 }
 
                 res.status(200).send({ message: 'OK', events: _events })
