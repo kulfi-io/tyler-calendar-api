@@ -26,10 +26,10 @@
   },
   "homepage": "https://github.com/kulfi-io/tyler-calendar-api#readme",
   "dependencies": {
-    "body-parser": "^1.19.0",
+    "body-parser": "^1.20.1",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
-    "express": "^4.17.1",
+    "express": "^4.18.2",
     "googleapis": "^39.2.0",
     "helmet": "^3.21.2",
     "jsonwebtoken": "^8.5.1",
